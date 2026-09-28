@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Structured logging for ingest, query, and retriever stages, including timing and empty-ingest warnings (closes #41).
 - `RecursiveChunker.from_config()` for creating a chunker from pipeline configuration (closes #25).
+- `DirectoryLoader` for loading supported documents from a directory with per-extension loader dispatch, including recursive and non-recursive traversal, `on_error` handling, and a skipped-file count (closes #34).
 
 ### Fixed
 - `TextFileLoader` and `MarkdownLoader` now convert Unicode decoding and unknown encoding errors to `LoaderError`, with configurable text decoding error handling (closes #24).
@@ -83,7 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI (Python 3.10 / 3.11 / 3.12)
 - Issue templates, PR template, and contributor guide
 - 10 curated Good First Issues for new contributors
-- `DirectoryLoader` for loading supported documents from a directory with per-extension loader dispatch
 
 [Unreleased]: https://github.com/adaumsilva/RAG-framework/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/adaumsilva/RAG-framework/compare/v0.2.0...v0.3.0

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from ragframework.base import Document, DocumentLoader
 from ragframework.document.loaders import (
     DirectoryLoader,
     DocxLoader,
@@ -433,3 +434,46 @@ def test_directory_loader_handles_unreadable_file(tmp_path, monkeypatch):
 
     with pytest.raises(LoaderError, match="bad.txt"):
         raise_loader.load(str(docs_dir))
+
+def test_directory_loader_non_recursive_ignores_nested_files(tmp_path):
+    docs_dir = tmp_path / "docs"
+    nested_dir = docs_dir / "nested"
+    nested_dir.mkdir(parents=True)
+
+    (docs_dir / "top.txt").write_text("Top", encoding="utf-8")
+    (nested_dir / "deep.txt").write_text("Deep", encoding="utf-8")
+
+    loader = DirectoryLoader(
+        loaders={".txt": TextFileLoader()},
+        recursive=False,
+    )
+
+    docs = loader.load(str(docs_dir))
+
+    assert [doc.metadata["relative_path"] for doc in docs] == ["top.txt"]
+
+def test_directory_loader_default_loaders_skip_pdf_without_pypdf(monkeypatch):
+    monkeypatch.setattr(
+        "ragframework.document.loaders.importlib.util.find_spec",
+        lambda name: None,
+    )
+
+    loader = DirectoryLoader()
+
+    assert ".pdf" not in loader.loaders
+    assert ".txt" in loader.loaders
+
+def test_directory_loader_counts_skipped_unsupported_files(tmp_path):
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    (docs_dir / "keep.txt").write_text("Keep", encoding="utf-8")
+    (docs_dir / "ignored.py").write_text("print('x')", encoding="utf-8")
+    (docs_dir / "ignored.csv").write_text("a,b", encoding="utf-8")
+
+    loader = DirectoryLoader(loaders={".txt": TextFileLoader()})
+
+    docs = loader.load(str(docs_dir))
+
+    assert len(docs) == 1
+    assert loader.skipped_count == 2

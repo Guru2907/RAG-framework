@@ -8,6 +8,7 @@ For HTML and other formats see the open issues in
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 from pathlib import Path
 
 from ragframework.base import Document, DocumentLoader
@@ -234,13 +235,16 @@ class DirectoryLoader(DocumentLoader):
                 ".txt": TextFileLoader(),
                 ".md": MarkdownLoader(),
                 ".markdown": MarkdownLoader(),
-                ".pdf": PDFLoader(),
             }
+            if importlib.util.find_spec("pypdf") is not None:
+                loaders[".pdf"] = PDFLoader()
 
         self.loaders = loaders
         self.glob = glob
         self.recursive = recursive
         self.on_error = on_error
+        self.skipped_count = 0
+
 
     def load(self, source: str) -> list[Document]:
         root = Path(source)
@@ -259,10 +263,14 @@ class DirectoryLoader(DocumentLoader):
             if not path.is_file():
                 continue
 
+            if not self.recursive and path.parent != root:
+                continue
+
             extension = path.suffix.lower()
             loader = self.loaders.get(extension)
 
             if loader is None:
+                self.skipped_count += 1
                 continue
 
             try:
